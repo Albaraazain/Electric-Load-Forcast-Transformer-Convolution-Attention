@@ -1,5 +1,5 @@
 from config.model_config import TransformerConfig
-from models.factory.model_factory import ModelFactory
+from transformer_conv_attention.models.factory.model_factory import ModelFactory
 from training.strategies.transformer_trainer import TransformerTrainer
 from data_loading.loaders.time_series_loader import TimeSeriesLoader
 
