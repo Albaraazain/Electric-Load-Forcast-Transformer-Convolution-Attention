@@ -1,0 +1,18 @@
+{
+    "sourceFile": "tests/data_loading/test_dataset.py",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1732143879659,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1732143879659,
+            "name": "Commit-0",
+            "content": "# tests/data_loading/test_dataset.py\r\nimport pytest\r\nimport pandas as pd\r\nimport numpy as np\r\nfrom datetime import datetime, timedelta\r\nfrom transformer_conv_attention.data_loading.datasets.time_series_dataset import TransformerTimeSeriesDataset\r\nfrom transformer_conv_attention.utils import DataError\r\n\r\n\r\n@pytest.fixture\r\ndef sample_data():\r\n    \"\"\"Create sample time series data\"\"\"\r\n    dates = pd.date_range(\r\n        start='2023-01-01',\r\n        end='2023-01-31',\r\n        freq='H'\r\n    )\r\n\r\n    df = pd.DataFrame({\r\n        'timestamp': dates,\r\n        'target': np.sin(np.arange(len(dates)) * 2 * np.pi / 24),\r\n        'feature1': np.random.normal(0, 1, len(dates)),\r\n        'feature2': np.random.normal(0, 1, len(dates))\r\n    })\r\n\r\n    return df\r\n\r\ndef test_dataset_initialization(sample_data):\r\n    dataset = TransformerTimeSeriesDataset(\r\n        data=sample_data,\r\n        window_size=24,\r\n        prediction_horizon=12,\r\n        target_column='target',\r\n        timestamp_column='timestamp',\r\n        feature_columns=['feature1', 'feature2']\r\n    )\r\n\r\n    assert len(dataset) > 0\r\n    assert dataset.get_feature_dim() == 8  # 2 features + 6 time features\r\n\r\ndef test_dataset_getitem(sample_data):\r\n    dataset = TransformerTimeSeriesDataset(\r\n        data=sample_data,\r\n        window_size=24,\r\n        prediction_horizon=12,\r\n        target_column='target',\r\n        timestamp_column='timestamp',\r\n        feature_columns=['feature1', 'feature2']\r\n    )\r\n\r\n    encoder_input, decoder_input, target = dataset[0]\r\n\r\n    assert encoder_input.shape == (24, 8)  # window_size x features\r\n    assert decoder_input.shape == (12, 8)  # prediction_horizon x features\r\n    assert target.shape == (12,)  # prediction_horizon\r\n\r\ndef test_invalid_window_size(sample_data):\r\n    with pytest.raises(ValueError, match=\"window_size must be positive\"):\r\n        TransformerTimeSeriesDataset(\r\n            data=sample_data,\r\n            window_size=0,\r\n            prediction_horizon=12,\r\n            target_column='target',\r\n            timestamp_column='timestamp'\r\n        )\r\n\r\ndef test_invalid_column(sample_data):\r\n    with pytest.raises(DataError, match=\"Missing required columns\"):\r\n        TransformerTimeSeriesDataset(\r\n            data=sample_data,\r\n            window_size=24,\r\n            prediction_horizon=12,\r\n            target_column='nonexistent',\r\n            timestamp_column='timestamp'\r\n        )"
+        }
+    ]
+}

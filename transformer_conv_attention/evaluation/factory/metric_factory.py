@@ -3,7 +3,6 @@ from typing import Dict, Type
 from ..interfaces.metric_interface import MetricInterface
 from ..metrics.mape_metric import MAPEMetric
 from ..metrics.rmse_metric import RMSEMetric
-# Import other metrics...
 
 class MetricFactory:
     """Factory for creating metric instances"""

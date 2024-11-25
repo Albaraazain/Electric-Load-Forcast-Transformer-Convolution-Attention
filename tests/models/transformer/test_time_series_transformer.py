@@ -5,7 +5,7 @@ import torch
 from transformer_conv_attention.models.builders.time_series_builder import TimeSeriesTransformerBuilder
 from transformer_conv_attention.models.transformer.time_series_transformer import TimeSeriesTransformerModel
 from transformer_conv_attention.config.time_series_config import TimeSeriesConfig
-from transformer_conv_attention.models.factory.model_factory import ModelFactory
+from transformer_conv_attention.models import ModelFactory
 
 @pytest.fixture
 def model_config():

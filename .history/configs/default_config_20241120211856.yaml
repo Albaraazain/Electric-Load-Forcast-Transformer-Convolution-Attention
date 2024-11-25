@@ -1,0 +1,32 @@
+# config/default_config.yaml
+model:
+  d_model: 512
+  n_heads: 8
+  n_encoder_layers: 6
+  n_decoder_layers: 6
+  d_ff: 2048
+  dropout: 0.1
+  kernel_size: 3
+  max_seq_length: 1000
+
+training:
+  batch_size: 32
+  learning_rate: 0.0001
+  max_epochs: 100
+  early_stopping_patience: 5
+  weight_decay: 0.01
+  warmup_steps: 1000
+  gradient_clip_val: 1.0
+
+data:
+  data_path: "data/time_series_data.csv"
+  target_column: "target"
+  timestamp_column: "timestamp"
+  feature_columns: ["feature1", "feature2"]
+  window_size: 168
+  prediction_horizon: 24
+  train_ratio: 0.7
+  val_ratio: 0.15
+  batch_size: 32
+  stride: 1
+  scaling_method: "standard"

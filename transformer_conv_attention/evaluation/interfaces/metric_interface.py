@@ -8,7 +8,7 @@ class MetricInterface(ABC):
     """Interface for metrics calculation"""
 
     @abstractmethod
-    def calculate(
+    def compute(
             self,
             actual: Union[np.ndarray, torch.Tensor],
             predicted: Union[np.ndarray, torch.Tensor],

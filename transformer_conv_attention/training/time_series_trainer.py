@@ -5,11 +5,13 @@ from typing import Dict, Optional, Tuple
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+from .trainer import Trainer  # Updated import
 
-from .trainer import Trainer
+from .time_series_training_config import TimeSeriesTrainingConfig
 from ..utils.logger import get_logger
 
 logger = get_logger(__name__)
+
 
 class TimeSeriesTrainer(Trainer):
     """Trainer specialized for time series forecasting"""
@@ -21,7 +23,7 @@ class TimeSeriesTrainer(Trainer):
             val_loader: DataLoader,
             criterion: nn.Module,
             optimizer: Optimizer,
-            config: TimeSeriesTrainingConfig,
+            config: 'TimeSeriesTrainingConfig',
             device: torch.device
     ):
         super().__init__()
@@ -39,33 +41,34 @@ class TimeSeriesTrainer(Trainer):
             mode='min',
             factor=config.learning_rate_scheduler_factor,
             patience=config.learning_rate_scheduler_patience,
-            min_delta=config.early_stopping_min_delta,
+            min_lr=config.early_stopping_min_delta,
             verbose=True
         )
-
-        # Training metrics
-        self.best_val_loss = float('inf')
-        self.patience_counter = 0
-        self.best_model_state = None
 
     def train_epoch(self) -> float:
         """Train one epoch"""
         self.model.train()
         total_loss = 0
 
-        for batch_idx, (x, y) in enumerate(self.train_loader):
-            x, y = x.to(self.device), y.to(self.device)
+        for x, target in self.train_loader:
+            x = x.to(self.device)
+            target = target.to(self.device)
+
+            # Ensure tensors require grad
+            x.requires_grad_(True)
+            target.requires_grad_(True)
 
             self.optimizer.zero_grad()
 
             # Forward pass
-            predictions, _ = self.model(
-                x,
-                target_len=self.config.prediction_horizon
-            )
+            predictions, _ = self.model(x, self.config.prediction_horizon)
+
+            # Reshape predictions and target if needed
+            if predictions.size() != target.size():
+                predictions = predictions.view(target.size())
 
             # Calculate loss
-            loss = self.criterion(predictions, y)
+            loss = self.criterion(predictions, target)
 
             # Backward pass
             loss.backward()
@@ -79,12 +82,6 @@ class TimeSeriesTrainer(Trainer):
 
             self.optimizer.step()
             total_loss += loss.item()
-
-            if batch_idx % 10 == 0:
-                logger.info(
-                    f'Train Batch {batch_idx}/{len(self.train_loader)} '
-                    f'Loss: {loss.item():.6f}'
-                )
 
         return total_loss / len(self.train_loader)
 
@@ -108,6 +105,8 @@ class TimeSeriesTrainer(Trainer):
                 total_loss += loss.item()
 
         return total_loss / len(self.val_loader)
+
+    # transformer_conv_attention/training/time_series_trainer.py
 
     def train(self) -> Dict[str, list]:
         """
@@ -140,7 +139,7 @@ class TimeSeriesTrainer(Trainer):
             )
 
             logger.info(
-                f'Epoch {epoch+1}/{self.config.max_epochs} - '
+                f'Epoch {epoch + 1}/{self.config.max_epochs} - '
                 f'Train Loss: {train_loss:.6f} - '
                 f'Val Loss: {val_loss:.6f}'
             )
@@ -154,9 +153,9 @@ class TimeSeriesTrainer(Trainer):
                 self.patience_counter += 1
 
             # Early stopping
-            if self.patience_counter >= self.config.patience:
+            if self.patience_counter >= self.config.early_stopping_patience:
                 logger.info(
-                    f'Early stopping triggered after {epoch+1} epochs'
+                    f'Early stopping triggered after {epoch + 1} epochs'
                 )
                 break
 

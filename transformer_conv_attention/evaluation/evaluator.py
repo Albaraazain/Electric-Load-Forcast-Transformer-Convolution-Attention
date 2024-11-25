@@ -1,4 +1,3 @@
-# transformer_conv_attention/evaluation/evaluator.py
 from typing import Dict, List, Optional, Tuple
 import torch
 import numpy as np
@@ -44,6 +43,13 @@ class TimeSeriesEvaluator(EvaluatorInterface):
             logger.error(f"Failed to add metric: {str(e)}")
             raise
 
+    def calculate_metrics(self, predictions: torch.Tensor, actuals: torch.Tensor) -> Dict[str, float]:
+        """Calculate evaluation metrics"""
+        metrics = {}
+        for metric in self.metrics:
+            metrics[metric.get_name()] = metric.compute(predictions, actuals)
+        return metrics
+
     def evaluate(
             self,
             dataloader: torch.utils.data.DataLoader,
@@ -81,23 +87,19 @@ class TimeSeriesEvaluator(EvaluatorInterface):
 
         # Inverse transform if scaler exists
         if self.scaler is not None:
-            predictions = torch.tensor(self.scaler.inverse_transform(predictions.numpy()))
-            actuals = torch.tensor(self.scaler.inverse_transform(actuals.numpy()))
+            predictions = torch.tensor(self.scaler.inverse_transform(predictions.detach().numpy()))
+            actuals = torch.tensor(self.scaler.inverse_transform(actuals.detach().numpy()))
 
         # Calculate metrics
-        metrics_results = {}
-        for metric in self.metrics:
-            try:
-                value = metric.calculate(actuals, predictions)
-                metrics_results[metric.get_name()] = value
-            except Exception as e:
-                logger.error(f"Error calculating {metric.get_name()}: {str(e)}")
-                metrics_results[metric.get_name()] = float('nan')
+        metrics = self.calculate_metrics(predictions, actuals)
 
         # Combine attention weights
-        combined_weights = self._combine_attention_weights(all_attention_weights)
+        combined_attention_weights = {
+            k: np.concatenate([aw[k] for aw in all_attention_weights], axis=0)
+            for k in all_attention_weights[0]
+        }
 
-        return metrics_results, combined_weights
+        return metrics, combined_attention_weights
 
     def _combine_attention_weights(
             self,

@@ -62,8 +62,20 @@ class TimeSeriesLoader:
             scaling_method=scaling_method
         )
 
+        print(f"[DEBUG] Initializing TimeSeriesLoader with:")
+        print(f"[DEBUG] - data_path: {data_path}")
+        print(f"[DEBUG] - window_size: {window_size}")
+        print(f"[DEBUG] - prediction_horizon: {prediction_horizon}")
+
         # Load and process data
         self._load_data()
+
+        print(f"[DEBUG] Initial data shape: {self.data.shape}")
+        print(f"[DEBUG] Data columns: {self.data.columns.tolist()}")
+
+    def transform(self, data: pd.DataFrame) -> pd.DataFrame:
+        """Transform new data using the existing processor"""
+        return self.processor.transform(data)
 
     def _load_data(self) -> None:
         """Load and preprocess data"""
@@ -79,9 +91,39 @@ class TimeSeriesLoader:
             # Process data
             self.data = self.processor.fit_transform(data)
 
-            # Split data
-            train_size = int(len(self.data) * self.train_ratio)
-            val_size = int(len(self.data) * self.val_ratio)
+            # Calculate minimum size needed for each split
+            min_split_size = self.window_size + self.prediction_horizon
+            total_min_size = min_split_size * 3  # Need enough for train, val, and test
+
+            if len(self.data) < total_min_size:
+                raise DataError(
+                    f"Data length ({len(self.data)}) must be at least "
+                    f"3 * (window_size + prediction_horizon) = {total_min_size}"
+                )
+
+            # Adjust ratios to ensure minimum sizes
+            available_data = len(self.data)
+
+            # Calculate sizes ensuring each split has at least min_split_size
+            train_size = max(
+                int(available_data * self.train_ratio),
+                min_split_size
+            )
+            val_size = max(
+                int(available_data * self.val_ratio),
+                min_split_size
+            )
+            test_size = max(
+                available_data - train_size - val_size,
+                min_split_size
+            )
+
+            # Recompute train_size if necessary
+            if train_size + val_size + test_size > available_data:
+                excess = (train_size + val_size + test_size) - available_data
+                train_size -= excess
+
+            print(f"[DEBUG] Split sizes - Train: {train_size}, Val: {val_size}, Test: {test_size}")
 
             self.train_data = self.data[:train_size]
             self.val_data = self.data[train_size:train_size + val_size]
@@ -96,6 +138,13 @@ class TimeSeriesLoader:
 
     def get_dataloaders(self) -> Tuple[DataLoader, DataLoader, DataLoader]:
         """Get train, validation, and test dataloaders"""
+
+        print(f"[DEBUG] Starting get_dataloaders()")
+        print(f"[DEBUG] Data shape before splitting: {self.data.shape}")
+
+
+
+
         # Create datasets
         train_dataset = TransformerTimeSeriesDataset(
             self.train_data,
@@ -126,6 +175,12 @@ class TimeSeriesLoader:
             self.feature_columns,
             stride=1  # Use stride=1 for testing
         )
+        print(f"[DEBUG] Dataset shapes:")
+        print(f"[DEBUG] - Train: {train_dataset.shape} (samples, window_size, features)")
+        print(f"[DEBUG] - Val: {val_dataset.shape} (samples, window_size, features)")
+        print(f"[DEBUG] - Test: {test_dataset.shape} (samples, window_size, features)")
+
+
 
         # Create dataloaders
         train_loader = DataLoader(

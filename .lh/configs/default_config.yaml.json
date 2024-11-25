@@ -1,0 +1,22 @@
+{
+    "sourceFile": "configs/default_config.yaml",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1732143546911,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1732143981821,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -28,8 +28,5 @@\n   train_ratio: 0.7\r\n   val_ratio: 0.15\r\n   batch_size: 32\r\n   stride: 1\r\n-  scaling_method: \"standard\"\r\n-\r\n-\r\n-  \n\\ No newline at end of file\n+  scaling_method: \"standard\"\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1732143546911,
+            "name": "Commit-0",
+            "content": "# config/default_config.yaml\r\nmodel:\r\n  d_model: 512\r\n  n_heads: 8\r\n  n_encoder_layers: 6\r\n  n_decoder_layers: 6\r\n  d_ff: 2048\r\n  dropout: 0.1\r\n  kernel_size: 3\r\n  max_seq_length: 1000\r\n\r\ntraining:\r\n  batch_size: 32\r\n  learning_rate: 0.0001\r\n  max_epochs: 100\r\n  early_stopping_patience: 5\r\n  weight_decay: 0.01\r\n  warmup_steps: 1000\r\n  gradient_clip_val: 1.0\r\n\r\ndata:\r\n  data_path: \"data/time_series_data.csv\"\r\n  target_column: \"target\"\r\n  timestamp_column: \"timestamp\"\r\n  feature_columns: [\"feature1\", \"feature2\"]\r\n  window_size: 168\r\n  prediction_horizon: 24\r\n  train_ratio: 0.7\r\n  val_ratio: 0.15\r\n  batch_size: 32\r\n  stride: 1\r\n  scaling_method: \"standard\"\r\n\r\n\r\n  "
+        }
+    ]
+}

@@ -1,10 +1,6 @@
-# transformer_conv_attention/models/factory/model_factory.py
-from typing import Dict, Type
-
-from torch import nn
-
-from ..interfaces.model_builder import ModelBuilder
-from ...config.model_config import TransformerConfig
+from typing import Dict, Type, Any
+import torch.nn as nn
+from ..builders.base_builder import ModelBuilder
 from ...utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -15,42 +11,17 @@ class ModelFactory:
     _builders: Dict[str, Type[ModelBuilder]] = {}
 
     @classmethod
-    def register_builder(
-            cls,
-            name: str,
-            builder: Type[ModelBuilder]
-    ) -> None:
-        """
-        Register a new model builder
-        
-        Args:
-            name: Name of the model type
-            builder: Builder class for the model
-        """
+    def register_builder(cls, name: str, builder: Type[ModelBuilder]) -> None:
+        """Register a new model builder"""
         if name in cls._builders:
             logger.warning(f"Builder {name} already registered. Overwriting...")
         cls._builders[name] = builder
         logger.info(f"Registered builder: {name}")
 
     @classmethod
-    def create_model(
-            cls,
-            model_type: str,
-            config: TransformerConfig
-    ) -> nn.Module:
-        """
-        Create a model using the registered builder
-        
-        Args:
-            model_type: Type of model to create
-            config: Model configuration
-            
-        Returns:
-            Created model
-            
-        Raises:
-            ValueError: If no builder is registered for model_type
-        """
+    def create_model(cls, model_type: str, config: Any) -> nn.Module:
+        """Create a model using the registered builder"""
+        print(f"[DEBUG] Available builders: {list(cls._builders.keys())}")
         builder_cls = cls._builders.get(model_type)
         if not builder_cls:
             raise ValueError(
@@ -59,7 +30,4 @@ class ModelFactory:
             )
 
         builder = builder_cls()
-        model = builder.build_model(config.to_dict())
-
-        logger.info(f"Created model of type: {model_type}")
-        return model
+        return builder.build_model(config)

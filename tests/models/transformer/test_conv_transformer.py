@@ -4,7 +4,7 @@ import torch
 
 from transformer_conv_attention.models.builders.conv_transformer_builder import ConvTransformerBuilder
 from transformer_conv_attention.models.transformer.conv_transformer import ConvolutionalTransformer
-from transformer_conv_attention.models.factory.model_factory import ModelFactory
+from transformer_conv_attention.models import ModelFactory
 from transformer_conv_attention.config.model_config import TransformerConfig
 
 @pytest.fixture

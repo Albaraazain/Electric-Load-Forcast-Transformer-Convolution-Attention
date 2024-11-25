@@ -9,6 +9,7 @@ from ...utils.exceptions import DataError
 
 logger = get_logger(__name__)
 
+
 class TransformerTimeSeriesDataset(TimeSeriesDataset):
     """Dataset for transformer time series data"""
 
@@ -54,20 +55,19 @@ class TransformerTimeSeriesDataset(TimeSeriesDataset):
             f"prediction_horizon={prediction_horizon}"
         )
 
+    @property
+    def shape(self) -> tuple:
+        """Get the shape of the dataset"""
+        n_samples = len(self)
+        n_features = self.get_feature_dim()
+        return (n_samples, self.window_size, n_features)
+
     def __len__(self) -> int:
         """Get number of samples in dataset"""
         return (len(self.data) - self.window_size - self.prediction_horizon + 1) // self.stride
 
     def __getitem__(self, index: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Get a single sample
-
-        Returns:
-            Tuple of (encoder_input, decoder_input, target)
-            - encoder_input: Input sequence for encoder [window_size, n_features]
-            - decoder_input: Input sequence for decoder [prediction_horizon, n_features]
-            - target: Target sequence [prediction_horizon]
-        """
+        """Get a single sample"""
         # Get start and end indices
         start_idx = index * self.stride
         encoder_end_idx = start_idx + self.window_size
@@ -83,6 +83,12 @@ class TransformerTimeSeriesDataset(TimeSeriesDataset):
             dtype=torch.float32
         )
 
+        # Debug shapes
+        print(f"[DEBUG] Sample shapes:")
+        print(f"[DEBUG] - encoder_input: {encoder_input.shape}")
+        print(f"[DEBUG] - decoder_input: {decoder_input.shape}")
+        print(f"[DEBUG] - target: {target.shape}")
+
         return encoder_input, decoder_input, target
 
     def get_feature_dim(self) -> int:
@@ -91,12 +97,22 @@ class TransformerTimeSeriesDataset(TimeSeriesDataset):
 
     def _validate_inputs(self) -> None:
         """Validate input parameters"""
+        print(f"[DEBUG] Validating inputs:")
+        print(f"[DEBUG] - Data length: {len(self.data)}")
+        print(f"[DEBUG] - Window size: {self.window_size}")
+        print(f"[DEBUG] - Prediction horizon: {self.prediction_horizon}")
+        print(f"[DEBUG] - Min required length: {self.window_size + self.prediction_horizon}")
+
         if self.window_size <= 0:
             raise ValueError("window_size must be positive")
         if self.prediction_horizon <= 0:
             raise ValueError("prediction_horizon must be positive")
         if self.stride <= 0:
             raise ValueError("stride must be positive")
+
+        print(f"[DEBUG] Checking columns:")
+        print(f"[DEBUG] - Available columns: {self.data.columns.tolist()}")
+        print(f"[DEBUG] - Required feature columns: {self.feature_columns}")
 
         # Check if required columns exist
         missing_cols = []

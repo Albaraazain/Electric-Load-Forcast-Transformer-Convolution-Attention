@@ -1,11 +1,13 @@
 # transformer_conv_attention/config/time_series_config.py
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import List
 from .model_config import TransformerConfig
+from ..utils.exceptions import ConfigurationError
 
 @dataclass
 class TimeSeriesConfig(TransformerConfig):
     """Configuration for time series transformer"""
+    # Time series specific fields
     input_size: int
     output_size: int
     sequence_length: int
@@ -16,22 +18,29 @@ class TimeSeriesConfig(TransformerConfig):
 
     def __post_init__(self):
         """Validate configuration values after initialization"""
-        super().validate()
-        self.validate()
+        print(f"[DEBUG] TimeSeriesConfig initialized with:")
+        print(f"[DEBUG] - d_model: {self.d_model}")
+        print(f"[DEBUG] - sequence_length: {self.sequence_length}")
+        print(f"[DEBUG] - prediction_length: {self.prediction_length}")
+        print(f"[DEBUG] - input_features: {self.input_features}")
+
+        # Validate both transformer and time series configs
+        super().validate()  # Call TransformerConfig validation
+        self.validate()     # Call local validation
 
     def validate(self) -> None:
-        """Validate configuration values"""
+        """Validate time series specific configuration values"""
         if self.input_size <= 0:
-            raise ValueError("input_size must be positive")
+            raise ConfigurationError("input_size must be positive")
         if self.output_size <= 0:
-            raise ValueError("output_size must be positive")
+            raise ConfigurationError("output_size must be positive")
         if self.sequence_length <= 0:
-            raise ValueError("sequence_length must be positive")
+            raise ConfigurationError("sequence_length must be positive")
         if self.prediction_length <= 0:
-            raise ValueError("prediction_length must be positive")
+            raise ConfigurationError("prediction_length must be positive")
         if not self.input_features:
-            raise ValueError("input_features cannot be empty")
+            raise ConfigurationError("input_features cannot be empty")
         if not self.target_features:
-            raise ValueError("target_features cannot be empty")
+            raise ConfigurationError("target_features cannot be empty")
         if self.scaling_method not in ['standard', 'minmax']:
-            raise ValueError("scaling_method must be 'standard' or 'minmax'")
+            raise ConfigurationError("scaling_method must be 'standard' or 'minmax'")
